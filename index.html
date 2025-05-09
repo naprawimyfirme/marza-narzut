@@ -183,6 +183,12 @@
       costSaleToMarginMarkup: "Dzięki tym wskaźnikom ocenisz rentowność produktu i będziesz mógł zoptymalizować cenę."
     };
 
+    // Wyślij wysokość iframe do rodzica
+    function sendHeightToParent() {
+      const h = document.body.scrollHeight;
+      window.parent.postMessage({ iframeHeight: h }, '*');
+    }
+
     function onModeChange() {
       const mode = document.getElementById('modeSelect').value;
       document.getElementById('modeDescription').innerText = descriptions[mode] || "";
@@ -204,15 +210,24 @@
         ['grpTotalCost','grpSalePrice'].forEach(id => document.getElementById(id).style.display = 'block');
       }
 
+      // wyczyść wyniki i legendę
       document.getElementById('results').innerHTML = '';
       document.getElementById('commentSection').innerHTML = '';
       document.getElementById('legendSection').innerHTML = '';
       if (pieChart) { pieChart.destroy(); pieChart = null; }
+
+      // odśwież wysokość
+      sendHeightToParent();
     }
 
     document.getElementById('modeSelect')
       .addEventListener('change', onModeChange);
 
+    // przy starcie i przy resize okna
+    window.addEventListener('load', sendHeightToParent);
+    window.addEventListener('resize', sendHeightToParent);
+
+    // pierwsze ustawienie
     onModeChange();
 
     function calculate() {
@@ -279,19 +294,22 @@
           break;
       }
 
+      // wstaw wyniki i komentarz
       document.getElementById('results').innerHTML = html;
       document.getElementById('commentSection').innerText = comments[mode] || '';
 
-      // generuj legendę tylko gdy jest wykres
+      // legendka i wykres
       if (chartData) {
+        // legendka
         const legendHTML = `
           <p><span class="color-box" style="background-color:#FF6384;"></span> Koszty: ${totalCost.toFixed(2)} zł</p>
           <p><span class="color-box" style="background-color:#4BC0C0;"></span> Zysk: ${chartData[1].toFixed(2)} zł</p>
         `;
         document.getElementById('legendSection').innerHTML = legendHTML;
 
+        // wykres
         const ctx = document.getElementById('pieChart').getContext('2d');
-        if (pieChart) { pieChart.destroy(); }
+        if (pieChart) pieChart.destroy();
         pieChart = new Chart(ctx, {
           type: 'pie',
           data: {
@@ -302,11 +320,11 @@
         });
       } else {
         document.getElementById('legendSection').innerHTML = '';
-        if (pieChart) { pieChart.destroy(); pieChart = null; }
+        if (pieChart) pieChart.destroy(), pieChart = null;
       }
 
-      // wysyłka wysokości dla iframe
-      window.parent.postMessage({ iframeHeight: document.body.scrollHeight }, '*');
+      // wyślij nową wysokość
+      sendHeightToParent();
     }
   </script>
 </body>
