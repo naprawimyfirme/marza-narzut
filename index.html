@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Uniwersalny Kalkulator Marży i Narzutu</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Ogólne style strony */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+    }
+    section {
+      padding: 40px 0;
+    }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+    .t68 {
+      background-color: #fff;
+      padding: 40px 0;
+    }
+    .t279 {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .t69 {
+      flex: 1;
+      max-width: 1280px;
+    }
+    .t73 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      color: #333;
+      text-align: center;
+    }
+    .calculator-form {
+      background-color: #f0f0f0;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .calculator-form .form-group {
+      margin-bottom: 20px;
+    }
+    .calculator-form label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    .calculator-form input,
+    .calculator-form select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    .dh-btn-primary {
+      background-color: #8e42ff;
+      color: #fff;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+      display: inline-block;
+      margin-top: 15px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .dh-btn-primary:hover {
+      background-color: #363636;
+    }
+    /* Sekcja wyników i komentarza */
+    #results, #commentSection, #legendSection {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    /* Legendka przy wykresie */
+    #legendSection p {
+      margin: 5px 0;
+    }
+    #legendSection span.color-box {
+      display: inline-block;
+      width: 15px;
+      height: 15px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    /* Układ dla wykresu */
+    #chartSection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+    #chartWrapper {
+      width: 150px;
+      height: 150px;
+    }
+    #chartWrapper canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+  <section class="t68">
+    <div class="container t279">
+      <div class="t69">
+        <h2 class="t73">Uniwersalny Kalkulator Marży i Narzutu</h2>
+        <div class="calculator-form">
+          <form id="calculatorForm" onsubmit="return false;">
+            <div class="form-group">
+              <label for="modeSelect">Wybierz tryb obliczeń:</label>
+              <select id="modeSelect">
+                <option value="markupToMargin">Przeliczenie narzutu na marżę</option>
+                <option value="marginToMarkup">Przeliczenie marży na narzut</option>
+                <option value="costMarkupToSale">Cena sprzedaży z narzutu</option>
+                <option value="costMarginToSale">Cena sprzedaży z marży</option>
+                <option value="costSaleToMarginMarkup">Marża i narzut z kosztu i ceny</option>
+              </select>
+              <p id="modeDescription" style="margin-top:10px; color:#555;"></p>
+            </div>
+            <div class="form-group" id="grpTotalCost">
+              <label for="totalCost">Koszty całkowite [zł]:</label>
+              <input type="number" id="totalCost" step="0.01" placeholder="np. 150.00">
+            </div>
+            <div class="form-group" id="grpSalePrice">
+              <label for="salePrice">Cena sprzedaży [zł]:</label>
+              <input type="number" id="salePrice" step="0.01" placeholder="np. 200.00">
+            </div>
+            <div class="form-group" id="grpMarkup">
+              <label for="markupPercent">Narzut [%]:</label>
+              <input type="number" id="markupPercent" step="0.01" placeholder="np. 200">
+            </div>
+            <div class="form-group" id="grpMargin">
+              <label for="marginPercent">Marża [%]:</label>
+              <input type="number" id="marginPercent" step="0.01" placeholder="np. 50">
+            </div>
+            <button type="button" class="dh-btn-primary" onclick="calculate()">Oblicz</button>
+          </form>
+        </div>
+
+        <div id="results"></div>
+        <div id="commentSection"></div>
+        <div id="legendSection"></div>
+        <div id="chartSection">
+          <div id="chartWrapper"><canvas id="pieChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    let pieChart = null;
+
+    const descriptions = {
+      markupToMargin: "Przelicza narzut procentowy na odpowiadającą mu marżę.",
+      marginToMarkup: "Przelicza marżę procentową na odpowiadający jej narzut.",
+      costMarkupToSale: "Wylicza cenę sprzedaży, zysk i marżę, gdy znasz koszty i narzut.",
+      costMarginToSale: "Wylicza cenę sprzedaży, zysk i narzut, gdy znasz koszty i marżę.",
+      costSaleToMarginMarkup: "Oblicza zysk, marżę i narzut na podstawie kosztów i ceny sprzedaży."
+    };
+
+    const comments = {
+      markupToMargin: "Marża pokazuje, jak dużą część ceny stanowi Twój zysk — warto ją monitorować przy ustalaniu cen.",
+      marginToMarkup: "Narzut informuje, o ile procent musisz podnieść koszty, by osiągnąć założoną marżę.",
+      costMarkupToSale: "Ustawiając tę cenę, zapewnisz sobie założony zysk — sprawdzaj koszty, by go utrzymać.",
+      costMarginToSale: "Ta cena gwarantuje upatrzoną marżę — pamiętaj o negocjacjach z dostawcami, by obniżyć koszty.",
+      costSaleToMarginMarkup: "Dzięki tym wskaźnikom ocenisz rentowność produktu i będziesz mógł zoptymalizować cenę."
+    };
+
+    function onModeChange() {
+      const mode = document.getElementById('modeSelect').value;
+      document.getElementById('modeDescription').innerText = descriptions[mode] || "";
+
+      // ukryj wszystkie grupy
+      ['grpTotalCost','grpSalePrice','grpMarkup','grpMargin']
+        .forEach(id => document.getElementById(id).style.display = 'none');
+
+      // pokaż te potrzebne
+      if (mode === 'markupToMargin') {
+        document.getElementById('grpMarkup').style.display = 'block';
+      } else if (mode === 'marginToMarkup') {
+        document.getElementById('grpMargin').style.display = 'block';
+      } else if (mode === 'costMarkupToSale') {
+        ['grpTotalCost','grpMarkup'].forEach(id => document.getElementById(id).style.display = 'block');
+      } else if (mode === 'costMarginToSale') {
+        ['grpTotalCost','grpMargin'].forEach(id => document.getElementById(id).style.display = 'block');
+      } else if (mode === 'costSaleToMarginMarkup') {
+        ['grpTotalCost','grpSalePrice'].forEach(id => document.getElementById(id).style.display = 'block');
+      }
+
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('commentSection').innerHTML = '';
+      document.getElementById('legendSection').innerHTML = '';
+      if (pieChart) { pieChart.destroy(); pieChart = null; }
+    }
+
+    document.getElementById('modeSelect')
+      .addEventListener('change', onModeChange);
+
+    onModeChange();
+
+    function calculate() {
+      const mode = document.getElementById('modeSelect').value;
+      const totalCost = parseFloat(document.getElementById('totalCost').value) || 0;
+      const sale = parseFloat(document.getElementById('salePrice').value) || 0;
+      const markup = parseFloat(document.getElementById('markupPercent').value) || 0;
+      const margin = parseFloat(document.getElementById('marginPercent').value) || 0;
+
+      let html = '', chartData = null;
+
+      switch (mode) {
+        case 'markupToMargin':
+          if (markup < 0) { alert('Narzut musi być ≥ 0'); return; }
+          const mPercent = markup / (100 + markup) * 100;
+          html = `<p><strong>Marża:</strong> ${mPercent.toFixed(2)}%</p>`;
+          break;
+
+        case 'marginToMarkup':
+          if (margin < 0 || margin >= 100) { alert('Marża musi być 0–99.99'); return; }
+          const muPercent = margin / (100 - margin) * 100;
+          html = `<p><strong>Narzut:</strong> ${muPercent.toFixed(2)}%</p>`;
+          break;
+
+        case 'costMarkupToSale':
+          if (totalCost <= 0 || markup < 0) {
+            alert('Podaj poprawne koszty (>0) i narzut (≥0)'); return;
+          }
+          const sale1 = totalCost * (1 + markup/100);
+          const profit1 = sale1 - totalCost;
+          html = `
+            <p><strong>Cena sprzedaży:</strong> ${sale1.toFixed(2)} zł</p>
+            <p><strong>Zysk:</strong> ${profit1.toFixed(2)} zł</p>
+            <p><strong>Marża:</strong> ${(profit1/sale1*100).toFixed(2)}%</p>
+          `;
+          chartData = [ totalCost, profit1 ];
+          break;
+
+        case 'costMarginToSale':
+          if (totalCost <= 0 || margin <= 0 || margin >= 100) {
+            alert('Podaj poprawne koszty (>0) i marżę (0–99.99)'); return;
+          }
+          const sale2 = totalCost / (1 - margin/100);
+          const profit2 = sale2 - totalCost;
+          html = `
+            <p><strong>Cena sprzedaży:</strong> ${sale2.toFixed(2)} zł</p>
+            <p><strong>Zysk:</strong> ${profit2.toFixed(2)} zł</p>
+            <p><strong>Narzut:</strong> ${(profit2/totalCost*100).toFixed(2)}%</p>
+          `;
+          chartData = [ totalCost, profit2 ];
+          break;
+
+        case 'costSaleToMarginMarkup':
+          if (totalCost <= 0 || sale <= 0) {
+            alert('Podaj poprawne koszty (>0) i cenę sprzedaży (>0)'); return;
+          }
+          const profit3 = sale - totalCost;
+          html = `
+            <p><strong>Zysk:</strong> ${profit3.toFixed(2)} zł</p>
+            <p><strong>Marża:</strong> ${(profit3/sale*100).toFixed(2)}%</p>
+            <p><strong>Narzut:</strong> ${(profit3/totalCost*100).toFixed(2)}%</p>
+          `;
+          chartData = [ totalCost, profit3 ];
+          break;
+      }
+
+      document.getElementById('results').innerHTML = html;
+      document.getElementById('commentSection').innerText = comments[mode] || '';
+
+      // generuj legendę tylko gdy jest wykres
+      if (chartData) {
+        const legendHTML = `
+          <p><span class="color-box" style="background-color:#FF6384;"></span> Koszty: ${totalCost.toFixed(2)} zł</p>
+          <p><span class="color-box" style="background-color:#4BC0C0;"></span> Zysk: ${chartData[1].toFixed(2)} zł</p>
+        `;
+        document.getElementById('legendSection').innerHTML = legendHTML;
+
+        const ctx = document.getElementById('pieChart').getContext('2d');
+        if (pieChart) { pieChart.destroy(); }
+        pieChart = new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: ['Koszty','Zysk'],
+            datasets: [{ data: chartData, backgroundColor: ['#FF6384','#4BC0C0'] }]
+          },
+          options: { plugins:{ legend:{ display:false } } }
+        });
+      } else {
+        document.getElementById('legendSection').innerHTML = '';
+        if (pieChart) { pieChart.destroy(); pieChart = null; }
+      }
+
+      // wysyłka wysokości dla iframe
+      window.parent.postMessage({ iframeHeight: document.body.scrollHeight }, '*');
+    }
+  </script>
+</body>
+</html>
