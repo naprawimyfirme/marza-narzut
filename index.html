@@ -2,330 +2,548 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <title>Uniwersalny Kalkulator Marży i Narzutu</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Kalkulator Marży i Narzutu</title>
   <style>
-    /* Ogólne style strony */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #ffffff;
-    }
-    section {
-      padding: 40px 0;
+      background: #fff;
+      color: #333;
     }
     .container {
-      max-width: 1280px;
+      max-width: 640px;
       margin: 0 auto;
-      padding: 0 15px;
+      padding: 40px 15px;
     }
-    .t68 {
-      background-color: #fff;
-      padding: 40px 0;
+    h2 {
+      font-size: 1.7rem;
+      color: #1a1a2e;
+      text-align: center;
+      margin: 0 0 6px;
     }
-    .t279 {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-start;
-      justify-content: center;
+    .subtitle {
+      text-align: center;
+      color: #777;
+      font-size: 0.92rem;
+      margin-bottom: 28px;
     }
-    .t69 {
-      flex: 1;
-      max-width: 1280px;
+
+    /* ── Form ── */
+    .calc-form {
+      background: #f7f7f9;
+      border: 1px solid #e8e8ec;
+      border-radius: 10px;
+      padding: 24px;
     }
-    .t73 {
-      font-size: 2rem;
-      margin-bottom: 20px;
-      color: #333;
+    .calc-hint {
+      font-size: 0.82rem;
+      color: #999;
+      margin-bottom: 18px;
       text-align: center;
     }
-    .calculator-form {
-      background-color: #f0f0f0;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+    .fields-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
     }
-    .calculator-form .form-group {
-      margin-bottom: 20px;
-    }
-    .calculator-form label {
+    .field label {
       display: block;
-      margin-bottom: 10px;
-      font-size: 1.1rem;
-      color: #333;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 5px;
     }
-    .calculator-form input,
-    .calculator-form select {
+    .field input {
       width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 10px 10px;
+      border: 1px solid #d0d0d8;
+      border-radius: 6px;
       font-size: 1rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
     }
-    .dh-btn-primary {
-      background-color: #8e42ff;
+    .field input:focus {
+      outline: none;
+      border-color: #8e42ff;
+      box-shadow: 0 0 0 3px rgba(142,66,255,0.1);
+    }
+    .field input.computed {
+      background: #f0edff;
+      border-color: #c4b0f0;
+      color: #5a3d8a;
+      font-weight: 600;
+    }
+    .reset-link {
+      display: block;
+      text-align: center;
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: #999;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .reset-link:hover { color: #8e42ff; }
+
+    /* ── Results ── */
+    .results {
+      margin-top: 22px;
+      display: none;
+    }
+    .results.visible { display: block; }
+
+    .results-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .res-card {
+      background: #fff;
+      border: 1px solid #e8e8ec;
+      border-radius: 8px;
+      padding: 12px 14px;
+      text-align: center;
+    }
+    .res-card.hl {
+      border-color: #8e42ff;
+      background: #faf7ff;
+    }
+    .res-label {
+      font-size: 0.75rem;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 3px;
+    }
+    .res-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+    .res-card.hl .res-value { color: #8e42ff; }
+
+    /* ── Visual bar ── */
+    .bar-section {
+      margin-bottom: 8px;
+    }
+    .bar-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: #999;
+      margin-bottom: 5px;
+    }
+    .bar-track {
+      width: 100%;
+      height: 38px;
+      background: #e8e8ec;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+    }
+    .bar-cost {
+      background: #dddde5;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #666;
+      transition: width 0.4s ease;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .bar-profit {
+      background: #8e42ff;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #fff;
+      transition: width 0.4s ease;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .bar-legend {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: #777;
+    }
+    .bar-legend span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+    .dot-cost { background: #dddde5; }
+    .dot-profit { background: #8e42ff; }
+
+    .bar-comment {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 10px;
+      line-height: 1.45;
+    }
+
+    /* ── Reference table ── */
+    .ref-section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #e8e8ec;
+    }
+    .ref-section h3 {
+      font-size: 1.05rem;
+      color: #1a1a2e;
+      margin: 0 0 4px;
+    }
+    .ref-desc {
+      font-size: 0.82rem;
+      color: #999;
+      margin-bottom: 12px;
+    }
+    .ref-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .ref-table th {
+      background: #f7f7f9;
+      padding: 8px 12px;
+      text-align: center;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 2px solid #e0e0e5;
+    }
+    .ref-table td {
+      padding: 8px 12px;
+      text-align: center;
+      border-bottom: 1px solid #f0f0f0;
+      color: #444;
+    }
+    .ref-table tr:hover td { background: #faf7ff; cursor: pointer; }
+    .ref-table .hl-row td {
+      background: #f5f0ff;
+      font-weight: 600;
+      color: #5a3d8a;
+    }
+
+    /* ── Mini bar in table ── */
+    .mini-bar {
+      display: inline-block;
+      width: 80px;
+      height: 10px;
+      background: #e8e8ec;
+      border-radius: 3px;
+      overflow: hidden;
+      vertical-align: middle;
+    }
+    .mini-bar-fill {
+      height: 100%;
+      background: #8e42ff;
+      border-radius: 3px;
+    }
+
+    /* ── CTA ── */
+    .cta-box {
+      margin-top: 32px;
+      background: #1a1a2e;
+      border-radius: 10px;
+      padding: 24px;
+      color: #fff;
+    }
+    .cta-box h3 {
+      font-size: 1.05rem;
+      margin: 0 0 8px;
+      color: #fff;
+      line-height: 1.4;
+    }
+    .cta-box p {
+      font-size: 0.88rem;
+      color: #b8b8c8;
+      line-height: 1.5;
+      margin: 0 0 16px;
+    }
+    .cta-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+    .cta-primary {
+      background: #8e42ff;
       color: #fff;
       padding: 10px 20px;
       text-decoration: none;
-      border-radius: 4px;
-      transition: background-color 0.3s ease;
-      display: inline-block;
-      margin-top: 15px;
-      border: none;
-      cursor: pointer;
-      font-size: 1rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background 0.2s;
     }
-    .dh-btn-primary:hover {
-      background-color: #363636;
+    .cta-primary:hover { background: #7a35e6; }
+    .cta-secondary {
+      background: transparent;
+      color: #b8b8c8;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      border: 1px solid #444;
+      transition: all 0.2s;
     }
-    /* Sekcja wyników i komentarza */
-    #results, #commentSection, #legendSection {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      margin-top: 15px;
-      font-size: 1.1rem;
-      color: #333;
-    }
-    /* Legendka przy wykresie */
-    #legendSection p {
-      margin: 5px 0;
-    }
-    #legendSection span.color-box {
-      display: inline-block;
-      width: 15px;
-      height: 15px;
-      margin-right: 5px;
-      vertical-align: middle;
-    }
-    /* Układ dla wykresu */
-    #chartSection {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 20px;
-    }
-    #chartWrapper {
-      width: 150px;
-      height: 150px;
-    }
-    #chartWrapper canvas {
-      width: 100% !important;
-      height: 100% !important;
+    .cta-secondary:hover { border-color: #8e42ff; color: #fff; }
+
+    /* ── Responsive ── */
+    @media (max-width: 520px) {
+      .fields-row { grid-template-columns: 1fr; }
+      .results-row { grid-template-columns: 1fr 1fr; }
+      .cta-btns { flex-direction: column; }
+      .cta-primary, .cta-secondary { text-align: center; }
     }
   </style>
 </head>
 <body>
-  <section class="t68">
-    <div class="container t279">
-      <div class="t69">
-        <h2 class="t73">Narzut a marża kalkulator</h2>
-        <div class="calculator-form">
-          <form id="calculatorForm" onsubmit="return false;">
-            <div class="form-group">
-              <label for="modeSelect">Wybierz tryb obliczeń:</label>
-              <select id="modeSelect">
-                <option value="markupToMargin">Przeliczenie narzutu na marżę</option>
-                <option value="marginToMarkup">Przeliczenie marży na narzut</option>
-                <option value="costMarkupToSale">Cena sprzedaży z narzutu</option>
-                <option value="costMarginToSale">Cena sprzedaży z marży</option>
-                <option value="costSaleToMarginMarkup">Marża i narzut z kosztu i ceny</option>
-              </select>
-              <p id="modeDescription" style="margin-top:10px; color:#555;"></p>
-            </div>
-            <div class="form-group" id="grpTotalCost">
-              <label for="totalCost">Koszty całkowite [zł]:</label>
-              <input type="number" id="totalCost" step="0.01" placeholder="np. 150.00">
-            </div>
-            <div class="form-group" id="grpSalePrice">
-              <label for="salePrice">Cena sprzedaży [zł]:</label>
-              <input type="number" id="salePrice" step="0.01" placeholder="np. 200.00">
-            </div>
-            <div class="form-group" id="grpMarkup">
-              <label for="markupPercent">Narzut [%]:</label>
-              <input type="number" id="markupPercent" step="0.01" placeholder="np. 200">
-            </div>
-            <div class="form-group" id="grpMargin">
-              <label for="marginPercent">Marża [%]:</label>
-              <input type="number" id="marginPercent" step="0.01" placeholder="np. 50">
-            </div>
-            <button type="button" class="dh-btn-primary" onclick="calculate()">Oblicz</button>
-          </form>
-        </div>
 
-        <div id="results"></div>
-        <div id="commentSection"></div>
-        <div id="legendSection"></div>
-        <div id="chartSection">
-          <div id="chartWrapper"><canvas id="pieChart"></canvas></div>
-        </div>
+<div class="container">
+  <h2>Narzut a marża — kalkulator</h2>
+  <p class="subtitle">Wpisz dowolne dwa pola — kalkulator wyliczy resztę automatycznie.</p>
+
+  <!-- Form -->
+  <div class="calc-form">
+    <p class="calc-hint">Wypełnij 2 z 3 pól, np. koszt + cenę albo koszt + narzut</p>
+    <div class="fields-row">
+      <div class="field">
+        <label>Koszt [zł]</label>
+        <input type="number" id="inCost" step="0.01" placeholder="np. 150">
+      </div>
+      <div class="field">
+        <label>Cena sprzedaży [zł]</label>
+        <input type="number" id="inPrice" step="0.01" placeholder="np. 250">
+      </div>
+      <div class="field">
+        <label>Narzut [%]</label>
+        <input type="number" id="inMarkup" step="0.01" placeholder="np. 66">
       </div>
     </div>
-  </section>
+    <span class="reset-link" onclick="resetAll()">Wyczyść pola</span>
+  </div>
 
-  <script>
-    let pieChart = null;
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="results-row" id="resCards"></div>
 
-    const descriptions = {
-      markupToMargin: "Przelicza narzut procentowy na odpowiadającą mu marżę.",
-      marginToMarkup: "Przelicza marżę procentową na odpowiadający jej narzut.",
-      costMarkupToSale: "Wylicza cenę sprzedaży, zysk i marżę, gdy znasz koszty i narzut.",
-      costMarginToSale: "Wylicza cenę sprzedaży, zysk i narzut, gdy znasz koszty i marżę.",
-      costSaleToMarginMarkup: "Oblicza zysk, marżę i narzut na podstawie kosztów i ceny sprzedaży."
-    };
+    <!-- Visual bar -->
+    <div class="bar-section" id="barSection">
+      <div class="bar-label-row">
+        <span>0 zł</span>
+        <span id="barPriceLabel">— zł</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-cost" id="barCost"></div>
+        <div class="bar-profit" id="barProfit"></div>
+      </div>
+      <div class="bar-legend">
+        <span><i class="dot dot-cost"></i> Koszt</span>
+        <span><i class="dot dot-profit"></i> Twój zysk</span>
+      </div>
+      <p class="bar-comment" id="barComment"></p>
+    </div>
+  </div>
 
-    const comments = {
-      markupToMargin: "Marża pokazuje, jak dużą część ceny stanowi Twój zysk — warto ją monitorować przy ustalaniu cen.",
-      marginToMarkup: "Narzut informuje, o ile procent musisz podnieść koszty, by osiągnąć założoną marżę.",
-      costMarkupToSale: "Ustawiając tę cenę, zapewnisz sobie założony zysk — sprawdzaj koszty, by go utrzymać.",
-      costMarginToSale: "Ta cena gwarantuje upatrzoną marżę — pamiętaj o negocjacjach z dostawcami, by obniżyć koszty.",
-      costSaleToMarginMarkup: "Dzięki tym wskaźnikom ocenisz rentowność produktu i będziesz mógł zoptymalizować cenę."
-    };
+  <!-- Reference table -->
+  <div class="ref-section">
+    <h3>Narzut a marża — szybkie porównanie</h3>
+    <p class="ref-desc">Kliknij wiersz, żeby wczytać wartość do kalkulatora.</p>
+    <table class="ref-table">
+      <thead><tr><th>Narzut</th><th>Marża</th><th></th></tr></thead>
+      <tbody>
+        <tr onclick="loadRef(25)"><td>25%</td><td>20,00%</td><td><span class="mini-bar"><span class="mini-bar-fill" style="width:20%"></span></span></td></tr>
+        <tr onclick="loadRef(50)" class="hl-row"><td>50%</td><td>33,33%</td><td><span class="mini-bar"><span class="mini-bar-fill" style="width:33.3%"></span></span></td></tr>
+        <tr onclick="loadRef(75)"><td>75%</td><td>42,86%</td><td><span class="mini-bar"><span class="mini-bar-fill" style="width:42.9%"></span></span></td></tr>
+        <tr onclick="loadRef(100)" class="hl-row"><td>100%</td><td>50,00%</td><td><span class="mini-bar"><span class="mini-bar-fill" style="width:50%"></span></span></td></tr>
+        <tr onclick="loadRef(150)"><td>150%</td><td>60,00%</td><td><span class="mini-bar"><span class="mini-bar-fill" style="width:60%"></span></span></td></tr>
+        <tr onclick="loadRef(200)"><td>200%</td><td>66,67%</td><td><span class="mini-bar"><span class="mini-bar-fill" style="width:66.7%"></span></span></td></tr>
+      </tbody>
+    </table>
+  </div>
 
-    // Wyślij wysokość iframe do rodzica
-    function sendHeightToParent() {
-      const h = document.body.scrollHeight;
-      window.parent.postMessage({ iframeHeight: h }, '*');
+  <!-- CTA -->
+  <div class="cta-box">
+    <h3>Kalkulator pokazał wynik — ale czy Twoja firma zarabia tyle, ile powinna?</h3>
+    <p>Większość właścicieli MŚP nie zna realnej rentowności swoich usług. Audyt procesów biznesowych pokaże, które zlecenia zarabiają, a które generują stratę.</p>
+    <div class="cta-btns">
+      <a href="https://naprawimyfirme.pl/audyt-procesow-biznesowych" class="cta-primary">Sprawdź audyt firmy</a>
+      <a href="https://naprawimyfirme.pl/doradztwo-biznesowe" class="cta-secondary">Doradztwo biznesowe</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const elCost   = document.getElementById('inCost');
+  const elPrice  = document.getElementById('inPrice');
+  const elMarkup = document.getElementById('inMarkup');
+  let lastEdited = []; // tracks which 2 fields user filled
+
+  function sendHeight() {
+    window.parent.postMessage({ iframeHeight: document.body.scrollHeight }, '*');
+  }
+
+  // Track which fields the user is actively editing
+  [elCost, elPrice, elMarkup].forEach(el => {
+    el.addEventListener('input', () => {
+      // Remove computed styling from this field — user is editing it
+      el.classList.remove('computed');
+      autoCalc();
+    });
+  });
+
+  function getFilledFields() {
+    const fields = [];
+    if (elCost.value !== '' && !elCost.classList.contains('computed'))   fields.push('cost');
+    if (elPrice.value !== '' && !elPrice.classList.contains('computed')) fields.push('price');
+    if (elMarkup.value !== '' && !elMarkup.classList.contains('computed')) fields.push('markup');
+    return fields;
+  }
+
+  function autoCalc() {
+    const filled = getFilledFields();
+    if (filled.length < 2) {
+      document.getElementById('results').classList.remove('visible');
+      // Clear computed fields
+      [elCost, elPrice, elMarkup].forEach(el => {
+        if (el.classList.contains('computed')) { el.value = ''; el.classList.remove('computed'); }
+      });
+      sendHeight();
+      return;
     }
 
-    function onModeChange() {
-      const mode = document.getElementById('modeSelect').value;
-      document.getElementById('modeDescription').innerText = descriptions[mode] || "";
+    let cost = parseFloat(elCost.value) || 0;
+    let price = parseFloat(elPrice.value) || 0;
+    let markup = parseFloat(elMarkup.value) || 0;
 
-      // ukryj wszystkie grupy
-      ['grpTotalCost','grpSalePrice','grpMarkup','grpMargin']
-        .forEach(id => document.getElementById(id).style.display = 'none');
+    // Determine what to compute based on which 2 fields user filled
+    const f1 = filled[0], f2 = filled[1];
+    const pair = f1 + '+' + f2;
 
-      // pokaż te potrzebne
-      if (mode === 'markupToMargin') {
-        document.getElementById('grpMarkup').style.display = 'block';
-      } else if (mode === 'marginToMarkup') {
-        document.getElementById('grpMargin').style.display = 'block';
-      } else if (mode === 'costMarkupToSale') {
-        ['grpTotalCost','grpMarkup'].forEach(id => document.getElementById(id).style.display = 'block');
-      } else if (mode === 'costMarginToSale') {
-        ['grpTotalCost','grpMargin'].forEach(id => document.getElementById(id).style.display = 'block');
-      } else if (mode === 'costSaleToMarginMarkup') {
-        ['grpTotalCost','grpSalePrice'].forEach(id => document.getElementById(id).style.display = 'block');
-      }
+    let profit, marginPct, markupPct;
 
-      // wyczyść wyniki i legendę
-      document.getElementById('results').innerHTML = '';
-      document.getElementById('commentSection').innerHTML = '';
-      document.getElementById('legendSection').innerHTML = '';
-      if (pieChart) { pieChart.destroy(); pieChart = null; }
-
-      // odśwież wysokość
-      sendHeightToParent();
+    if (pair === 'cost+price') {
+      if (cost <= 0 || price <= 0) return hide();
+      profit = price - cost;
+      marginPct = (profit / price) * 100;
+      markupPct = (profit / cost) * 100;
+      setComputed(elMarkup, markupPct.toFixed(1));
+    }
+    else if (pair === 'cost+markup') {
+      if (cost <= 0) return hide();
+      price = cost * (1 + markup / 100);
+      profit = price - cost;
+      marginPct = (profit / price) * 100;
+      markupPct = markup;
+      setComputed(elPrice, price.toFixed(2));
+    }
+    else if (pair === 'price+markup') {
+      if (price <= 0 || markup < 0) return hide();
+      cost = price / (1 + markup / 100);
+      profit = price - cost;
+      marginPct = (profit / price) * 100;
+      markupPct = markup;
+      setComputed(elCost, cost.toFixed(2));
+    }
+    else {
+      return hide();
     }
 
-    document.getElementById('modeSelect')
-      .addEventListener('change', onModeChange);
+    if (price <= 0) return hide();
 
-    // przy starcie i przy resize okna
-    window.addEventListener('load', sendHeightToParent);
-    window.addEventListener('resize', sendHeightToParent);
+    // ── Render results ──
+    const cards = document.getElementById('resCards');
+    cards.innerHTML = `
+      <div class="res-card hl">
+        <div class="res-label">Zysk</div>
+        <div class="res-value">${profit.toFixed(2)} zł</div>
+      </div>
+      <div class="res-card hl">
+        <div class="res-label">Marża</div>
+        <div class="res-value">${marginPct.toFixed(1)}%</div>
+      </div>
+    `;
 
-    // pierwsze ustawienie
-    onModeChange();
+    // ── Bar diagram ──
+    const costPct = Math.max(0, Math.min(100, (cost / price) * 100));
+    const profitPct = 100 - costPct;
 
-    function calculate() {
-      const mode = document.getElementById('modeSelect').value;
-      const totalCost = parseFloat(document.getElementById('totalCost').value) || 0;
-      const sale = parseFloat(document.getElementById('salePrice').value) || 0;
-      const markup = parseFloat(document.getElementById('markupPercent').value) || 0;
-      const margin = parseFloat(document.getElementById('marginPercent').value) || 0;
+    document.getElementById('barPriceLabel').textContent = price.toFixed(2) + ' zł';
+    const barCostEl = document.getElementById('barCost');
+    const barProfitEl = document.getElementById('barProfit');
 
-      let html = '', chartData = null;
+    barCostEl.style.width = costPct + '%';
+    barProfitEl.style.width = profitPct + '%';
 
-      switch (mode) {
-        case 'markupToMargin':
-          if (markup < 0) { alert('Narzut musi być ≥ 0'); return; }
-          const mPercent = markup / (100 + markup) * 100;
-          html = `<p><strong>Marża:</strong> ${mPercent.toFixed(2)}%</p>`;
-          break;
+    barCostEl.textContent = costPct > 15 ? cost.toFixed(0) + ' zł' : '';
+    barProfitEl.textContent = profitPct > 12 ? profit.toFixed(0) + ' zł' : '';
 
-        case 'marginToMarkup':
-          if (margin < 0 || margin >= 100) { alert('Marża musi być 0–99.99'); return; }
-          const muPercent = margin / (100 - margin) * 100;
-          html = `<p><strong>Narzut:</strong> ${muPercent.toFixed(2)}%</p>`;
-          break;
-
-        case 'costMarkupToSale':
-          if (totalCost <= 0 || markup < 0) {
-            alert('Podaj poprawne koszty (>0) i narzut (≥0)'); return;
-          }
-          const sale1 = totalCost * (1 + markup/100);
-          const profit1 = sale1 - totalCost;
-          html = `
-            <p><strong>Cena sprzedaży:</strong> ${sale1.toFixed(2)} zł</p>
-            <p><strong>Zysk:</strong> ${profit1.toFixed(2)} zł</p>
-            <p><strong>Marża:</strong> ${(profit1/sale1*100).toFixed(2)}%</p>
-          `;
-          chartData = [ totalCost, profit1 ];
-          break;
-
-        case 'costMarginToSale':
-          if (totalCost <= 0 || margin <= 0 || margin >= 100) {
-            alert('Podaj poprawne koszty (>0) i marżę (0–99.99)'); return;
-          }
-          const sale2 = totalCost / (1 - margin/100);
-          const profit2 = sale2 - totalCost;
-          html = `
-            <p><strong>Cena sprzedaży:</strong> ${sale2.toFixed(2)} zł</p>
-            <p><strong>Zysk:</strong> ${profit2.toFixed(2)} zł</p>
-            <p><strong>Narzut:</strong> ${(profit2/totalCost*100).toFixed(2)}%</p>
-          `;
-          chartData = [ totalCost, profit2 ];
-          break;
-
-        case 'costSaleToMarginMarkup':
-          if (totalCost <= 0 || sale <= 0) {
-            alert('Podaj poprawne koszty (>0) i cenę sprzedaży (>0)'); return;
-          }
-          const profit3 = sale - totalCost;
-          html = `
-            <p><strong>Zysk:</strong> ${profit3.toFixed(2)} zł</p>
-            <p><strong>Marża:</strong> ${(profit3/sale*100).toFixed(2)}%</p>
-            <p><strong>Narzut:</strong> ${(profit3/totalCost*100).toFixed(2)}%</p>
-          `;
-          chartData = [ totalCost, profit3 ];
-          break;
-      }
-
-      // wstaw wyniki i komentarz
-      document.getElementById('results').innerHTML = html;
-      document.getElementById('commentSection').innerText = comments[mode] || '';
-
-      // legendka i wykres
-      if (chartData) {
-        // legendka
-        const legendHTML = `
-          <p><span class="color-box" style="background-color:#FF6384;"></span> Koszty: ${totalCost.toFixed(2)} zł</p>
-          <p><span class="color-box" style="background-color:#4BC0C0;"></span> Zysk: ${chartData[1].toFixed(2)} zł</p>
-        `;
-        document.getElementById('legendSection').innerHTML = legendHTML;
-
-        // wykres
-        const ctx = document.getElementById('pieChart').getContext('2d');
-        if (pieChart) pieChart.destroy();
-        pieChart = new Chart(ctx, {
-          type: 'pie',
-          data: {
-            labels: ['Koszty','Zysk'],
-            datasets: [{ data: chartData, backgroundColor: ['#FF6384','#4BC0C0'] }]
-          },
-          options: { plugins:{ legend:{ display:false } } }
-        });
-      } else {
-        document.getElementById('legendSection').innerHTML = '';
-        if (pieChart) pieChart.destroy(), pieChart = null;
-      }
-
-      // wyślij nową wysokość
-      sendHeightToParent();
+    // Comment
+    let comment = '';
+    if (profit < 0) {
+      comment = 'Sprzedajesz poniżej kosztów — ta usługa/produkt generuje stratę.';
+    } else if (marginPct < 15) {
+      comment = 'Marża poniżej 15% — przy takiej rentowności nawet niewielki wzrost kosztów może zepchnąć Cię na minus.';
+    } else if (marginPct < 30) {
+      comment = 'Marża 15–30% — typowa dla handlu i usług budowlanych. Sprawdź, czy pokrywa wszystkie koszty stałe.';
+    } else if (marginPct < 50) {
+      comment = 'Marża 30–50% — dobry poziom dla firm usługowych. Kluczowe pytanie: czy utrzymujesz ją na wszystkich zleceniach?';
+    } else {
+      comment = 'Marża powyżej 50% — wysoka rentowność. Upewnij się, że cena jest konkurencyjna i nie tracisz klientów.';
     }
-  </script>
+    document.getElementById('barComment').textContent = comment;
+
+    document.getElementById('barSection').style.display = profit >= 0 ? 'block' : 'none';
+    document.getElementById('results').classList.add('visible');
+    sendHeight();
+  }
+
+  function setComputed(el, val) {
+    el.value = val;
+    el.classList.add('computed');
+  }
+
+  function hide() {
+    document.getElementById('results').classList.remove('visible');
+    sendHeight();
+  }
+
+  function resetAll() {
+    [elCost, elPrice, elMarkup].forEach(el => {
+      el.value = '';
+      el.classList.remove('computed');
+    });
+    document.getElementById('results').classList.remove('visible');
+    sendHeight();
+  }
+
+  function loadRef(markupVal) {
+    resetAll();
+    elMarkup.value = markupVal;
+    elCost.value = 100;
+    autoCalc();
+    // Scroll to top of calculator
+    document.querySelector('.calc-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  window.addEventListener('load', sendHeight);
+  window.addEventListener('resize', sendHeight);
+</script>
+
 </body>
 </html>
